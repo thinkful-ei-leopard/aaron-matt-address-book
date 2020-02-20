@@ -3,7 +3,7 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const helmet = require('helmet');
-const { NODE_ENV } = require('./config');
+const { NODE_ENV, API_TOKEN } = require('./config');
 
 const uuid = require('uuid/v4');
 
@@ -14,6 +14,7 @@ const morganOption = (NODE_ENV === 'production')
   : 'common';
 
 app.use(morgan(morganOption));
+app.use(express.json());
 app.use(helmet());
 app.use(cors());
 
@@ -23,7 +24,23 @@ app.get('/address', (req, res) => {
   res.json({ addresses });
 });
 
-app.post('/address', (req, res) => {
+app.delete('/address/:addressId', validateToken, (req, res) => {
+  const { addressId } = req.params;
+
+  const index = addresses.findIndex(u => u.id === addressId);
+  if (index === -1) {
+    return res  
+      .status(404)
+      .send('Address not found');
+  }
+
+  addresses.splice(index, 1);
+  res 
+    .status(204)
+    .end();
+});
+
+app.post('/address', validateToken, (req, res) => {
   const { firstName, lastName, address1, address2='', city, state, zip } = req.body;
 
   if(!firstName) {
@@ -90,5 +107,15 @@ app.use((error, req, res, next) => {
   }
   res.status(500).json(response);
 });
+
+function validateToken (req, res, next) {
+  const apiToken = API_TOKEN
+  const authToken = req.get('Authorization')
+
+  if (!authToken || authToken.split(' ')[1] !==apiToken) {
+      return res.status(401).json({ error: 'Unauthorized request'})
+  }
+  next()
+}
 
 module.exports = app;
