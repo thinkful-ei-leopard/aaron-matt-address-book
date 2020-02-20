@@ -1,9 +1,9 @@
 const app = require('../src/app');
 
 describe('App', () => {
-  it('GET / responds with 200 containing "Hello, world!"', () => {
+  it('GET /address responds with 200 containing empty array"', () => {
     return supertest(app)
-      .get('/')
-      .expect(200, 'Hello, world!');
+      .get('/address')
+      .expect(200, { addresses: [] });
   });
 });
